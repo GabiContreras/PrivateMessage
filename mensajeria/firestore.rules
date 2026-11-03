@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function ok() { return request.auth != null && request.auth.uid in ['UID_TABLET','UID_CELULAR']; }
+    match /messages/{id} {
+      allow read, delete: if ok();
+      allow create: if ok()
+        && request.resource.data.keys().hasOnly(['uid','ts','iv','ct'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.ts == request.time
+        && request.resource.data.ct.size() < 4000;
+      allow update: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

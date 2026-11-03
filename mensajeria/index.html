@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://*.googleapis.com https://*.firebaseio.com; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#2f5d50">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Canal</title>
+<style>
+:root{--bg:#eef1ec;--ink:#1e2a28;--mute:#65726f;--card:#fff;--mine:#2f5d50;--mineink:#fff;--line:#d5dbd5;--bad:#b4432f}
+@media(prefers-color-scheme:dark){:root{--bg:#141a19;--ink:#e6ece8;--mute:#8d9b97;--card:#222b29;--mine:#3f7a69;--line:#2c3735}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+body.blur #app{filter:blur(14px);pointer-events:none}
+section{display:none;height:100%;flex-direction:column}
+section.on{display:flex}
+.center{justify-content:center;max-width:380px;margin:0 auto;padding:24px;gap:12px}
+h1{font-size:1.4rem;margin:0 0 4px}
+p.h{color:var(--mute);margin:0 0 8px;font-size:.92rem}
+input,button{font:inherit;color:inherit}
+input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+input:focus-visible,button:focus-visible{outline:3px solid var(--mine);outline-offset:2px}
+button{padding:12px 16px;border:0;border-radius:10px;background:var(--mine);color:var(--mineink);cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.bad{background:var(--bad)}
+.err{color:var(--bad);min-height:1.3em;font-size:.9rem}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+header b{font-size:1.05rem}
+header small{display:block;color:var(--mute);font-size:.78rem}
+#list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.m{max-width:80%;padding:8px 12px;border-radius:14px;background:var(--card);align-self:flex-start;white-space:pre-wrap;overflow-wrap:anywhere}
+.m.me{align-self:flex-end;background:var(--mine);color:var(--mineink)}
+.m .w{display:block;font-size:.74rem;color:var(--mute);margin-bottom:2px}
+.m time{display:block;font-size:.7rem;opacity:.65;text-align:right;margin-top:2px}
+.m.bad{font-style:italic;color:var(--mute)}
+form.send{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}
+form.send input{flex:1}
+label{font-size:.85rem;color:var(--mute);display:block;margin:10px 0 4px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#settings{padding:18px;overflow-y:auto}
+</style>
+</head>
+<body>
+<div id="app" style="height:100%">
+
+<section id="login" class="center">
+  <h1>Entrar</h1>
+  <p class="h">Usá la cuenta que creaste para este dispositivo.</p>
+  <input id="em" type="email" placeholder="Correo" autocomplete="username">
+  <input id="pw" type="password" placeholder="Contraseña" autocomplete="current-password">
+  <div class="err" id="e1"></div>
+  <button id="go">Entrar</button>
+</section>
+
+<section id="keys" class="center">
+  <h1>Clave compartida</h1>
+  <p class="h">Escribí la misma frase secreta en los dos dispositivos. Los mensajes se cifran con ella y nadie más puede leerlos, ni siquiera el servidor. Usá una frase larga (5 palabras o más).</p>
+  <input id="ph" type="password" placeholder="Frase secreta" autocomplete="off">
+  <div class="err" id="e2"></div>
+  <button id="sk">Guardar clave en este dispositivo</button>
+</section>
+
+<section id="chat">
+  <header>
+    <div><b id="title">Canal</b><small id="me"></small></div>
+    <button class="ghost" id="gs" aria-label="Ajustes">Ajustes</button>
+  </header>
+  <div id="list" role="log" aria-live="polite"></div>
+  <form class="send" id="f">
+    <input id="tx" placeholder="Escribí un mensaje" maxlength="1000" autocomplete="off" enterkeyhint="send">
+    <button>Enviar</button>
+  </form>
+</section>
+
+<section id="settings">
+  <h1>Ajustes</h1>
+  <label for="myn">Mi nombre en este dispositivo (lo ve la otra persona)</label>
+  <input id="myn" maxlength="30" placeholder="Ej: Tablet de Gabi">
+  <label for="alias">Cómo veo yo al otro dispositivo (solo en este)</label>
+  <input id="alias" maxlength="30" placeholder="Ej: Celu">
+  <div class="row"><button id="sv">Guardar</button><button class="ghost" id="bk">Volver</button></div>
+  <label>Seguridad</label>
+  <div class="row">
+    <button class="ghost" id="lo">Cerrar sesión y olvidar clave</button>
+    <button class="bad" id="del">Borrar todos los mensajes</button>
+  </div>
+  <p class="h" style="margin-top:18px">La pantalla se difumina cuando la app pasa a segundo plano.</p>
+</section>
+
+</div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,collection,addDoc,query,orderBy,limit,onSnapshot,serverTimestamp,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+/* 1) Pegá acá la config de tu proyecto Firebase (Configuración del proyecto > Tus apps > Web) */
+const firebaseConfig={apiKey:"PEGAR",authDomain:"PEGAR",projectId:"PEGAR",appId:"PEGAR"};
+
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const show=id=>{for(const s of document.querySelectorAll("section"))s.classList.toggle("on",s.id===id)};
+const enc=new TextEncoder(),dec=new TextDecoder();
+const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+
+/* IndexedDB: guarda la clave como CryptoKey NO extraíble */
+const open=()=>new Promise((res,rej)=>{const r=indexedDB.open("canal",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const kv=async(m,k,v)=>{const d=await open();return new Promise((res,rej)=>{const s=d.transaction("kv",m==="get"?"readonly":"readwrite").objectStore("kv");const q=m==="get"?s.get(k):m==="put"?s.put(v,k):s.delete(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})};
+
+const deriveKey=async p=>{
+  const base=await crypto.subtle.importKey("raw",enc.encode(p),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:enc.encode("canal-privado-v1"),iterations:310000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+};
+const seal=async(key,obj)=>{const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,enc.encode(JSON.stringify(obj)));return{iv:b64(iv),ct:b64(ct)}};
+const unseal=async(key,{iv,ct})=>JSON.parse(dec.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(iv)},key,unb64(ct))));
+
+let key=null,unsub=null;
+const cfg=()=>({n:localStorage.getItem("myName")||"Sin nombre",a:localStorage.getItem("alias")||""});
+
+/* Login */
+$("go").onclick=async()=>{
+  $("e1").textContent="";
+  try{await signInWithEmailAndPassword(auth,$("em").value.trim(),$("pw").value);$("pw").value=""}
+  catch{$("e1").textContent="Correo o contraseña incorrectos."}
+};
+onAuthStateChanged(auth,async u=>{
+  if(unsub){unsub();unsub=null}
+  if(!u){show("login");return}
+  key=await kv("get","key");
+  key?startChat():show("keys");
+});
+
+/* Clave */
+$("sk").onclick=async()=>{
+  const p=$("ph").value;
+  if(p.length<16){$("e2").textContent="Usá una frase de al menos 16 caracteres.";return}
+  key=await deriveKey(p);await kv("put","key",key);$("ph").value="";$("e2").textContent="";startChat();
+};
+
+/* Chat */
+function startChat(){
+  show("chat");paintHeader();
+  const q=query(collection(db,"messages"),orderBy("ts"),limit(200));
+  unsub=onSnapshot(q,async snap=>{
+    const list=$("list");list.textContent="";
+    for(const d of snap.docs){
+      const x=d.data({serverTimestamps:"estimate"}),mine=x.uid===auth.currentUser.uid;
+      const el=document.createElement("div");el.className="m"+(mine?" me":"");
+      try{
+        const p=await unseal(key,x);
+        if(!mine){const w=document.createElement("span");w.className="w";w.textContent=cfg().a||p.n||"Otro";el.append(w)}
+        el.append(document.createTextNode(String(p.t)));
+      }catch{el.className+=" bad";el.textContent="No se pudo descifrar (¿clave distinta?)"}
+      const t=document.createElement("time");t.textContent=x.ts?x.ts.toDate().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
+      el.append(t);list.append(el);
+    }
+    list.scrollTop=list.scrollHeight;
+  },()=>{$("list").textContent="Sin acceso. Revisá tu cuenta y las reglas."});
+}
+function paintHeader(){const c=cfg();$("me").textContent="Vos: "+c.n;$("title").textContent=c.a||"Canal"}
+$("f").onsubmit=async e=>{
+  e.preventDefault();const t=$("tx").value.trim();if(!t)return;$("tx").value="";
+  const s=await seal(key,{n:cfg().n,t});
+  await addDoc(collection(db,"messages"),{uid:auth.currentUser.uid,ts:serverTimestamp(),...s});
+};
+
+/* Ajustes */
+$("gs").onclick=()=>{$("myn").value=localStorage.getItem("myName")||"";$("alias").value=localStorage.getItem("alias")||"";show("settings")};
+$("bk").onclick=()=>show("chat");
+$("sv").onclick=()=>{localStorage.setItem("myName",$("myn").value.trim());localStorage.setItem("alias",$("alias").value.trim());paintHeader();show("chat");startChatRefresh()};
+const startChatRefresh=()=>{if(unsub){unsub();unsub=null}startChat()};
+$("lo").onclick=async()=>{if(unsub)unsub();await kv("del","key");key=null;$("list").textContent="";await signOut(auth)};
+$("del").onclick=async()=>{
+  if(!confirm("Se borran los mensajes para los dos dispositivos. ¿Seguir?"))return;
+  const s=await getDocs(query(collection(db,"messages"),limit(400)));
+  const b=writeBatch(db);s.forEach(d=>b.delete(d.ref));await b.commit();show("chat");
+};
+
+/* Privacidad: difumina al salir de la app */
+document.addEventListener("visibilitychange",()=>document.body.classList.toggle("blur",document.hidden));
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
